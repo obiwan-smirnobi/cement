@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Common.Extensions;
 using Common.YamlParsers;
+using Common.YamlParsers.V2.Factories;
 
 namespace Common
 {
@@ -21,11 +23,13 @@ namespace Common
 
         public static List<string> GetAllInstallFiles(string module)
         {
-            if (!File.Exists(Path.Combine(Helper.CurrentWorkspace, module, Helper.YamlSpecFile)))
+            var yamlFilePath = Path.Combine(Helper.CurrentWorkspace, module, Helper.YamlSpecFile);
+            if (!File.Exists(yamlFilePath))
                 return new List<string>();
-            var configs = Yaml.ConfigurationParser(module).GetConfigurations();
-            var result = configs.Select(config => Yaml.InstallParser(module).Get(config)).SelectMany(parser => parser.Artifacts);
-            return result.Distinct().Select(file => Path.Combine(module, file)).ToList();
+
+            var definition = ModuleYamlParserFactory.Get().ParseByFilePath(yamlFilePath);
+            var allArtifacts = definition.AllConfigurations.SelectMany(kvp => kvp.Value.Installs.Artifacts).Distinct();
+            return allArtifacts.Select(file => Path.Combine(module, file)).ToList();
         }
     }
 }

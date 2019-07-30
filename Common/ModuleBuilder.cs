@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Common.Extensions;
+using Common.YamlParsers.V2.Factories;
 
 namespace Common
 {
@@ -117,7 +119,12 @@ namespace Common
             if (!Yaml.Exists(dep.Name))
                 return;
 
-            var artifacts = Yaml.InstallParser(dep.Name).Get(dep.Configuration).Artifacts;
+            var definition = ModuleYamlParserFactory.Get().ParseByModuleName(dep.Name);
+            var artifacts = definition.FindConfigurationOrDefault(dep.Configuration)?.Installs.Artifacts;
+
+            if (artifacts == null)
+                return;
+
             foreach (var artifact in artifacts)
             {
                 var fixedPath = Helper.FixPath(artifact);
@@ -137,10 +144,12 @@ namespace Common
                 if (scripts.Any(script => script != null))
                     return scripts.All(script => RunBuildScript(dep, script));
             }
+
             if (File.Exists(cmdFile))
             {
                 return BuildByCmd(dep, cmdFile);
             }
+
             ConsoleWriter.WriteSkip($"{dep.ToBuildString(),-40}*content");
             return true;
         }

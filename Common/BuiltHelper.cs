@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
-using Common.YamlParsers;
+using Common.Extensions;
+using Common.YamlParsers.V2.Factories;
 
 namespace Common
 {
@@ -20,10 +21,15 @@ namespace Common
 
         public static bool HasAllOutput(string moduleName, string configuration, bool requireYaml)
         {
-            var path = Path.Combine(Helper.CurrentWorkspace, moduleName, Helper.YamlSpecFile);
-            if (!File.Exists(path))
+            var yamlFilePath = Path.Combine(Helper.CurrentWorkspace, moduleName, Helper.YamlSpecFile);
+            if (!File.Exists(yamlFilePath))
                 return !requireYaml;
-            var artifacts = Yaml.InstallParser(moduleName).Get(configuration).Artifacts;
+
+            var definition = ModuleYamlParserFactory.Get().ParseByFilePath(yamlFilePath);
+            var artifacts = definition.FindConfigurationOrDefault(configuration)?.Installs.Artifacts;
+            if (artifacts == null)
+                return true;
+
             return artifacts.Select(Helper.FixPath).All(art => File.Exists(Path.Combine(Helper.CurrentWorkspace, moduleName, art)));
         }
     }

@@ -22,12 +22,6 @@ namespace Tests.Helpers
             }
         }
 
-        public static InstallYamlParser InstallParser(string text)
-        {
-            const string fakeModuleName = "some_module";
-            return new InstallYamlParser(fakeModuleName, text);
-        }
-
         public static BuildYamlParser BuildParser(string text)
         {
             using (var dir = new TempDirectory())

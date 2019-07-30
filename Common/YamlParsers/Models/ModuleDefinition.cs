@@ -20,6 +20,15 @@ namespace Common.YamlParsers.Models
         public IReadOnlyDictionary<string, ModuleConfig> AllConfigurations { get; }
 
         [CanBeNull]
+        public ModuleConfig FindConfigurationOrDefault(string configName = null)
+        {
+            if (string.IsNullOrEmpty(configName) || !AllConfigurations.ContainsKey(configName))
+                return defaultConfig;
+
+            return AllConfigurations[configName];
+        }
+
+        [CanBeNull]
         public ModuleConfig FindDefaultConfiguration() => defaultConfig;
 
         [NotNull]

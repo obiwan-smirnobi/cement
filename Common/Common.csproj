@@ -94,6 +94,7 @@
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\InstallDataExtensions.cs" />
+    <Compile Include="Extensions\ModuleYamlParserExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Graph\GraphHelper.cs" />
     <Compile Include="Graph\ParallelBuilder.cs" />
@@ -144,7 +145,6 @@
     <Compile Include="InstallCollector.cs" />
     <Compile Include="InstallData.cs" />
     <Compile Include="YamlParsers\HooksYamlParser.cs" />
-    <Compile Include="YamlParsers\InstallYamlParser.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="ModuleBuilder.cs" />
     <Compile Include="ModuleGetter.cs" />

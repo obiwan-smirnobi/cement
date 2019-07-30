@@ -28,11 +28,6 @@ namespace Common.YamlParsers
             return new DepsYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
         }
 
-        public static InstallYamlParser InstallParser(string moduleName)
-        {
-            return new InstallYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
-        }
-
         public static BuildYamlParser BuildParser(string moduleName)
         {
             return new BuildYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
@@ -46,15 +41,6 @@ namespace Common.YamlParsers
         public static HooksYamlParser HooksParser(string moduleName)
         {
             return new HooksYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
-        }
-
-        public static List<string> GetChildrenConfiguration(Dep dep)
-        {
-            var parser = ConfigurationParser(dep.Name);
-            var configs = parser.GetConfigurations();
-            var manager = new ConfigurationManager(dep.Name, configs);
-            var processedChildren = manager.ProcessedChildrenConfigurations(dep).Concat(new[] {dep.Configuration}).Distinct().ToList();
-            return processedChildren;
         }
 
         public static List<string> GetCsprojsList(string moduleName)

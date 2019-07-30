@@ -47,7 +47,6 @@ namespace Tests.ParsersTests
             var text = pathToContentMap[path];
 
             var depsSectionParser = new DepsYamlParser("fake", text);
-            var installSectionParser = new InstallYamlParser("fake", text);
             var buildSectionParser = new BuildYamlParser("fake", text);
 
             var configs = depsSectionParser.GetConfigurations();
@@ -57,7 +56,6 @@ namespace Tests.ParsersTests
                 Assert.DoesNotThrow(() =>
                 {
                     depsSectionParser.Get(config);
-                    installSectionParser.Get(config);
                     buildSectionParser.Get(config);
                 });
             }
@@ -98,28 +96,6 @@ namespace Tests.ParsersTests
                 var oldDeps = depsSectionParser.Get(config);
 
                 newDeps.Should().BeEquivalentTo(oldDeps);
-            }
-        }
-
-        [TestCaseSource(nameof(Source))]
-        public void EnsureEquivalentInstallSections(string path)
-        {
-            var text = pathToContentMap[path];
-            var parser = ModuleYamlParserFactory.Get();
-            var installYamlParser = new InstallYamlParser("fake", text);
-
-            var md = parser.Parse(text);
-            var configs = md.AllConfigurations.Keys.ToArray();
-
-            foreach (var config in configs)
-            {
-                var newInstall = md[config].Installs;
-                var oldInstall = installYamlParser.Get(config);
-
-                // todo - disputable - is it equivalent enough is the lists are the same only after Distinct()?
-                oldInstall.ExternalModules = oldInstall.ExternalModules?.Distinct().ToList();
-                oldInstall.NuGetPackages = oldInstall.NuGetPackages?.Distinct().ToList();
-                newInstall.Should().BeEquivalentTo(oldInstall);
             }
         }
 
