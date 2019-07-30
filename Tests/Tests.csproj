@@ -236,7 +236,6 @@
     <Compile Include="UtilsTests\TestShellRunner.cs" />
     <Compile Include="UtilsTests\TestArgumentParser.cs" />
     <Compile Include="BuildTests\TestBuildDepsCache.cs" />
-    <Compile Include="ParsersTests\TestBuildYamlParser.cs" />
     <Compile Include="CommandsTests\TestCheckDeps.cs" />
     <Compile Include="ParsersTests\TestConfigurationXmlParser.cs" />
     <Compile Include="BuildTests\TestConfigurationManager.cs" />

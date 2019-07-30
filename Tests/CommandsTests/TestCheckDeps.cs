@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Common;
+using FluentAssertions;
 using NUnit.Framework;
 
 namespace Tests.CommandsTests
@@ -139,11 +140,13 @@ full-build:
   deps:
     B");
                 Helper.SetWorkspace(tempDir.Path);
-                var depsReferences =
-                    new DepsReferencesCollector(Path.Combine(tempDir.Path, "A"), null).GetRefsFromDeps();
-                Assert.AreEqual(new[] {"C"}, depsReferences.NotFoundInstallSection);
-                Assert.AreEqual(new[] {"B\\bin\\Release\\B.dll", "B\\bin\\Release\\B.Client.dll"}, depsReferences.FoundReferences.First().InstallFiles);
-                Assert.AreEqual(new[] {"B\\bin\\Release\\B.dll"}, depsReferences.FoundReferences.First().CurrentConfigurationInstallFiles);
+                var depsReferences = new DepsReferencesCollector(Path.Combine(tempDir.Path, "A"), null).GetRefsFromDeps();
+
+                depsReferences.NotFoundInstallSection.Should().BeEquivalentTo("C");
+                var firstRef = depsReferences.FoundReferences.First();
+
+                firstRef.InstallFiles.Should().BeEquivalentTo(@"B\bin\Release\B.dll", @"B\bin\Release\B.Client.dll");
+                firstRef.CurrentConfigurationInstallFiles.Should().BeEquivalentTo("B\\bin\\Release\\B.dll");
             }
         }
     }

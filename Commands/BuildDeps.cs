@@ -48,7 +48,7 @@ namespace Commands
             var moduleName = Path.GetFileName(cwd);
 
             configuration = string.IsNullOrEmpty(configuration) ? "full-build" : configuration;
-            
+
             var builder = new ModuleBuilder(Log, buildSettings);
             var builderInitTask = Task.Run(() => builder.Init());
             var modulesOrder = new BuildPreparer(Log).GetModulesOrder(moduleName, configuration ?? "full-build");
@@ -178,7 +178,7 @@ namespace Commands
                 Parallel.ForEach(deps, Helper.ParallelOptions, group =>
                 {
                     ConsoleWriter.WriteProgress($"{group.Key,-30} nuget restoring");
-                    builder.NugetRestore(group.Key, group.Select(d => d.Configuration).ToList(), nugetRunCommand);
+                    builder.NugetRestore(group.Key, nugetRunCommand);
                     ConsoleWriter.SaveToProcessedModules(group.Key);
                 });
             }

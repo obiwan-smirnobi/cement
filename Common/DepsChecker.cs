@@ -3,12 +3,13 @@ using System.IO;
 using System.Linq;
 using Common.Extensions;
 using Common.YamlParsers;
+using Common.YamlParsers.V2.Factories;
 
 namespace Common
 {
     public class DepsChecker
     {
-        private readonly List<BuildData> buildData;
+        private readonly BuildData[] buildData;
         private readonly DepsReferencesCollector depsRefsCollector;
         private readonly List<string> modules;
         private readonly string moduleDirectory;
@@ -18,7 +19,9 @@ namespace Common
         {
             if (!new ConfigurationParser(new FileInfo(cwd)).ConfigurationExists(config))
                 throw new NoSuchConfigurationException(cwd, config);
-            buildData = new BuildYamlParser(new FileInfo(cwd)).Get(config);
+
+            buildData = ModuleYamlParserFactory.Get().ParseByModuleDirectory(cwd).FindConfigurationOrDefault(config)?.Builds;
+
             depsRefsCollector = new DepsReferencesCollector(cwd, config);
             this.modules = modules.Select(m => m.Name).ToList();
             moduleDirectory = cwd;
@@ -28,16 +31,18 @@ namespace Common
         public CheckDepsResult GetCheckDepsResult(bool notOnlyCement)
         {
             var refsList = new List<ReferenceWithCsproj>();
-            foreach (var bulid in buildData)
+            foreach (var build in buildData)
             {
-                if (bulid.Target.IsFakeTarget() || bulid.Tool.Name != "msbuild")
+                if (build.Target.IsFakeTarget() || build.Tool.Name != "msbuild")
                     continue;
-                var vsParser = new VisualStudioProjectParser(Path.Combine(moduleDirectory, bulid.Target), modules);
-                var files = vsParser.GetCsprojList(bulid);
-                var refs = files.SelectMany(file =>
-                    vsParser.GetReferencesFromCsproj(file, bulid.Configuration, notOnlyCement).Select(reference => reference.Replace('/', '\\')).Select(r => new ReferenceWithCsproj(r, file)));
+                var vsParser = new VisualStudioProjectParser(Path.Combine(moduleDirectory, build.Target), modules);
+                var files = vsParser.GetCsprojList(build);
+                var refs = files.SelectMany(
+                    file =>
+                        vsParser.GetReferencesFromCsproj(file, build.Configuration, notOnlyCement).Select(reference => reference.Replace('/', '\\')).Select(r => new ReferenceWithCsproj(r, file)));
                 refsList.AddRange(refs);
             }
+
             return GetCheckDepsResult(refsList);
         }
 
@@ -52,16 +57,24 @@ namespace Common
             {
                 notUsedDeps.Add(installData.ModuleName);
 
-                foreach (var d in installData.Artifacts)
+                if (installData.Artifacts != null)
                 {
-                    inDeps.Add(d);
+                    foreach (var d in installData.Artifacts)
+                    {
+                        inDeps.Add(d);
+                    }
                 }
-                bool isOverhead = true;
-                foreach (var d in installData.CurrentConfigurationInstallFiles)
+
+                var isOverhead = true;
+                if (installData.CurrentConfigurationInstallFiles != null)
                 {
-                    if (csprojRefs.Any(r => r.Reference.ToLower() == d.ToLower()))
-                        isOverhead = false;
+                    foreach (var d in installData.CurrentConfigurationInstallFiles)
+                    {
+                        if (csprojRefs.Any(r => r.Reference.ToLower() == d.ToLower()))
+                            isOverhead = false;
+                    }
                 }
+
                 if (isOverhead)
                     configOverhead.Add(installData.ModuleName);
             }
@@ -82,8 +95,8 @@ namespace Common
 
             foreach (var r in csprojRefs)
             {
-                var moduleName = GetModuleName(r.Reference);
-                notUsedDeps.Remove(moduleName);
+                var name = GetModuleName(r.Reference);
+                notUsedDeps.Remove(name);
             }
 
             DeleteMsBuild(notUsedDeps);
@@ -122,8 +135,11 @@ namespace Common
         public readonly SortedSet<string> NoYamlInstallSection;
         public readonly SortedSet<string> ConfigOverhead;
 
-        public CheckDepsResult(SortedSet<string> notUsedDeps, List<ReferenceWithCsproj> notInDeps,
-            SortedSet<string> noYamlInstall, SortedSet<string> configOverhead)
+        public CheckDepsResult(
+            SortedSet<string> notUsedDeps,
+            List<ReferenceWithCsproj> notInDeps,
+            SortedSet<string> noYamlInstall,
+            SortedSet<string> configOverhead)
         {
             NotUsedDeps = notUsedDeps;
             NotInDeps = notInDeps;
@@ -157,7 +173,7 @@ namespace Common
                 }
 
                 var depInstall = new InstallCollector(Path.Combine(workspace, dep.Name)).Get(dep.Configuration);
-                if (!depInstall.Artifacts.Any())
+                if (depInstall.Artifacts == null || !depInstall.Artifacts.Any())
                 {
                     if (!Yaml.Exists(dep.Name) || !IsContentModule(dep))
                         notFoundInstall.Add(dep.Name);
@@ -165,29 +181,31 @@ namespace Common
                 else
                 {
                     depInstall.ModuleName = dep.Name;
-                    depInstall.InstallFiles =
-                        depInstall.InstallFiles.Select(reference => reference.Replace('/', '\\')).ToList();
-                    depInstall.Artifacts =
-                        depInstall.Artifacts.Select(reference => reference.Replace('/', '\\')).ToList();
-                    depInstall.CurrentConfigurationInstallFiles =
-                        depInstall.CurrentConfigurationInstallFiles.Select(reference => reference.Replace('/', '\\')).ToList();
+                    depInstall.Artifacts = depInstall.Artifacts.Select(reference => reference.Replace('/', '\\')).ToList();
+                    depInstall.InstallFiles = depInstall.InstallFiles?.Select(reference => reference.Replace('/', '\\')).ToList();
+                    depInstall.CurrentConfigurationInstallFiles = depInstall.CurrentConfigurationInstallFiles?.Select(reference => reference.Replace('/', '\\')).ToList();
                     resultInstallData.Add(depInstall);
                 }
             }
+
             return new DepsReferenceSearchModel(resultInstallData, notFoundInstall);
         }
 
         private static bool IsContentModule(Dep dep)
         {
-            return Yaml.SettingsParser(dep.Name).Get().IsContentModule || Yaml.BuildParser(dep.Name).Get(dep.Configuration)
-                .All(t => t.Target == "None");
+            var definition = ModuleYamlParserFactory.Get().ParseByModuleName(dep.Name);
+            var isContentModule = definition.Defaults.SettingsSection.IsContentModule;
+            var config = definition.FindConfigurationOrDefault(dep.Configuration);
+
+            var allNonBuilt = config == null || config.Builds.All(t => t.Target == "None");
+            return isContentModule || allNonBuilt;
         }
     }
 
     public class DepsReferenceSearchModel
     {
-        public List<InstallData> FoundReferences;
-        public List<string> NotFoundInstallSection;
+        public readonly List<InstallData> FoundReferences;
+        public readonly List<string> NotFoundInstallSection;
 
         public DepsReferenceSearchModel(List<InstallData> found, List<string> notFound)
         {

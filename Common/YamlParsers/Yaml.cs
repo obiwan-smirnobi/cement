@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Common.Extensions;
+using Common.YamlParsers.V2.Factories;
 
 namespace Common.YamlParsers
 {
@@ -28,11 +29,6 @@ namespace Common.YamlParsers
             return new DepsYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
         }
 
-        public static BuildYamlParser BuildParser(string moduleName)
-        {
-            return new BuildYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
-        }
-
         public static SettingsYamlParser SettingsParser(string moduleName)
         {
             return new SettingsYamlParser(new FileInfo(Path.Combine(Helper.CurrentWorkspace, moduleName)));
@@ -48,18 +44,20 @@ namespace Common.YamlParsers
             if (!Exists(moduleName))
                 return new List<string>();
 
-            var configs = ConfigurationParser(moduleName).GetConfigurations();
-            var buildsInfo = configs.SelectMany(config => BuildParser(moduleName).Get(config));
+            var definition = ModuleYamlParserFactory.Get().ParseByModuleName(moduleName);
+            var buildsInfo = definition.AllConfigurations.Values.SelectMany(c => c.Builds);
             var files = new List<string>();
             var moduleDirectory = Path.Combine(Helper.CurrentWorkspace, moduleName);
 
             var projects = buildsInfo.Select(info => info.Target)
-                .Where(t => !t.IsFakeTarget()).Distinct();
+                .Where(t => !t.IsFakeTarget())
+                .Distinct();
 
             foreach (var project in projects)
             {
                 var vsParser = new VisualStudioProjectParser(
-                    Path.Combine(moduleDirectory, project), Helper.GetModules());
+                    Path.Combine(moduleDirectory, project),
+                    Helper.GetModules());
                 files.AddRange(vsParser.GetCsprojList());
             }
 
@@ -87,8 +85,9 @@ namespace Common.YamlParsers
             if (!Exists(moduleName))
                 return new List<string>();
 
-            var configs = ConfigurationParser(moduleName).GetConfigurations();
-            var buildsInfo = configs.SelectMany(config => BuildParser(moduleName).Get(config));
+            var definition = ModuleYamlParserFactory.Get().ParseByModuleName(moduleName);
+            var buildsInfo = definition.AllConfigurations.Values.SelectMany(c => c.Builds);
+
             var moduleDirectory = Path.Combine(Helper.CurrentWorkspace, moduleName);
             var solutions = buildsInfo
                 .Select(info => info.Target)

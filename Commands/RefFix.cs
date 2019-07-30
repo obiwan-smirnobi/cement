@@ -67,9 +67,9 @@ namespace Commands
             oldYamlContent = Yaml.ReadAllText(rootModuleName);
 
             var modules = Helper.GetModules();
+            var definition = ModuleYamlParserFactory.Get().ParseByModuleName(rootModuleName);
 
-            var configs = Yaml.ConfigurationParser(rootModuleName).GetConfigurations();
-            var buildsInfo = configs.SelectMany(config => Yaml.BuildParser(rootModuleName).Get(config));
+            var buildsInfo = definition.AllConfigurations.Values.SelectMany(c => c.Builds);
             var processedFiles = new HashSet<string>();
 
             foreach (var buildInfo in buildsInfo)

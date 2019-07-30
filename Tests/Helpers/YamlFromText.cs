@@ -22,16 +22,6 @@ namespace Tests.Helpers
             }
         }
 
-        public static BuildYamlParser BuildParser(string text)
-        {
-            using (var dir = new TempDirectory())
-            {
-                var yamlPath = Path.Combine(dir.Path, Helper.YamlSpecFile);
-                File.WriteAllText(yamlPath, text);
-                return new BuildYamlParser(new FileInfo(dir.Path));
-            }
-        }
-
         public static SettingsYamlParser SettingsParser(string text)
         {
             using (var dir = new TempDirectory())

@@ -1,9 +1,9 @@
-using System;
 using Common;
 using Common.YamlParsers;
 using System.IO;
 using System.Linq;
 using Common.Extensions;
+using Common.YamlParsers.V2.Factories;
 
 namespace Commands
 {
@@ -32,7 +32,7 @@ namespace Commands
             project = Yaml.GetProjectFileName(project, moduleName);
             configuration = configuration ?? "full-build";
 
-            var buildData = Yaml.BuildParser(moduleName).Get(configuration).FirstOrDefault(t => !t.Target.IsFakeTarget());
+            var buildData = ModuleYamlParserFactory.Get().ParseByModuleName(moduleName).FindConfigurationOrDefault(configuration)?.Builds.FirstOrDefault(t => !t.Target.IsFakeTarget());
 
             var projectPath = Path.GetFullPath(project);
             var csproj = new ProjectFile(projectPath);
@@ -58,6 +58,7 @@ namespace Commands
                     File.Delete(projectPath);
                 File.Move(backupFileName, projectPath);
             }
+
             return 0;
         }
 

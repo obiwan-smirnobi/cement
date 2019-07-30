@@ -42,26 +42,6 @@ namespace Tests.ParsersTests
         }
 
         [TestCaseSource(nameof(Source))]
-        public void OldYamlParsersDoNotThrow(string path)
-        {
-            var text = pathToContentMap[path];
-
-            var depsSectionParser = new DepsYamlParser("fake", text);
-            var buildSectionParser = new BuildYamlParser("fake", text);
-
-            var configs = depsSectionParser.GetConfigurations();
-
-            foreach (var config in configs)
-            {
-                Assert.DoesNotThrow(() =>
-                {
-                    depsSectionParser.Get(config);
-                    buildSectionParser.Get(config);
-                });
-            }
-        }
-
-        [TestCaseSource(nameof(Source))]
         public void EnsureEquivalentConfigurations(string path)
         {
             var text = pathToContentMap[path];
@@ -96,32 +76,6 @@ namespace Tests.ParsersTests
                 var oldDeps = depsSectionParser.Get(config);
 
                 newDeps.Should().BeEquivalentTo(oldDeps);
-            }
-        }
-
-        [TestCaseSource(nameof(Source))]
-        public void EnsureEquivalentBuildSections(string path)
-        {
-            var text = pathToContentMap[path];
-            var parser = ModuleYamlParserFactory.Get();
-            var buildYamlParser = new BuildYamlParser("fake", text);
-
-            var md = parser.Parse(text);
-            var configs = md.AllConfigurations.Keys.ToArray();
-
-            foreach (var config in configs)
-            {
-                var newBuild = md[config].Builds;
-                var oldBuild = buildYamlParser.Get(config);
-
-                var oldBuildIsActuallyEmpty = oldBuild.Count == 1
-                                              && oldBuild[0].Configuration == null
-                                              && oldBuild[0].Name == string.Empty
-                                              && oldBuild[0].Target == string.Empty
-                                              && oldBuild[0].Parameters.Count == 0;
-
-                if (newBuild != null && !oldBuildIsActuallyEmpty)
-                    newBuild.Should().BeEquivalentTo(oldBuild);
             }
         }
 

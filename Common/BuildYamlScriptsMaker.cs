@@ -1,8 +1,8 @@
 using System;
-using Common.YamlParsers;
 using System.Collections.Generic;
 using System.Linq;
 using Common.Extensions;
+using Common.YamlParsers.V2.Factories;
 
 namespace Common
 {
@@ -10,9 +10,15 @@ namespace Common
     {
         public static List<BuildScriptWithBuildData> PrepareBuildScriptsFromYaml(Dep dep)
         {
-            var buildSections = Yaml.BuildParser(dep.Name).Get(dep.Configuration);
+            var buildSections = ModuleYamlParserFactory.Get()
+                .ParseByModuleName(dep.Name)
+                .FindConfigurationOrDefault(dep.Configuration)
+                ?.Builds;
 
             var result = new List<BuildScriptWithBuildData>();
+            if (buildSections == null)
+                return result;
+
             foreach (var buildSection in buildSections)
             {
                 if (buildSection.Target.IsFakeTarget())
@@ -20,11 +26,10 @@ namespace Common
                 else
                 {
                     var script = MakeScript(dep, buildSection);
-                    result.Add(new BuildScriptWithBuildData(
-                        script,
-                        buildSection));
+                    result.Add(new BuildScriptWithBuildData(script, buildSection));
                 }
             }
+
             return result;
         }
 

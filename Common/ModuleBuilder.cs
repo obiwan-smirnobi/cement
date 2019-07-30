@@ -44,11 +44,13 @@ namespace Common
             return false;
         }
 
-        public void NugetRestore(string moduleName, List<string> configurations, string nugetRunCommand)
+        public void NugetRestore(string moduleName, string nugetRunCommand)
         {
             if (Yaml.Exists(moduleName))
             {
-                var buildSections = configurations.SelectMany(c => Yaml.BuildParser(moduleName).Get(c)).ToList();
+                var definition = ModuleYamlParserFactory.Get().ParseByModuleName(moduleName);
+
+                var buildSections = definition.AllConfigurations.Values.SelectMany(c => c.Builds);
                 var targets = new HashSet<string>();
                 foreach (var buildSection in buildSections)
                 {

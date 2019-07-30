@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Common.Extensions;
 using Common.YamlParsers;
+using Common.YamlParsers.V2.Factories;
 using log4net;
 
 namespace Common
@@ -36,13 +37,15 @@ namespace Common
         {
             var childConfigurations = new ConfigurationYamlParser(new FileInfo(Directory.GetParent(yamlPath).FullName))
                 .GetConfigurationsHierarchy()[patchConfiguration]
-                .Where(c => !processed.Contains(c)).ToList();
+                .Where(c => !processed.Contains(c))
+                .ToList();
 
             foreach (var child in childConfigurations)
             {
                 PatchConfiguration(child);
                 processed.Add(child);
             }
+
             foreach (var child in childConfigurations)
                 PatchDfs(child, processed);
         }
@@ -341,20 +344,22 @@ namespace Common
             if (!File.Exists(moduleYaml))
                 return new List<string>();
 
-            var configurations = new ConfigurationParser(new FileInfo(modulePath)).GetConfigurations();
             var result = new HashSet<string>();
-            foreach (var config in configurations)
+            var definition = ModuleYamlParserFactory.Get().ParseByFilePath(moduleYaml);
+
+            foreach (var kvp in definition.AllConfigurations)
             {
-                var buildData = new BuildYamlParser(new FileInfo(modulePath)).Get(config);
+                var buildData = kvp.Value.Builds;
                 foreach (var data in buildData)
                 {
                     if (data.Target.IsFakeTarget())
                         continue;
                     var dataTargetPath = Path.Combine(modulePath, data.Target);
                     if (dataTargetPath == solutionFile)
-                        result.Add(config);
+                        result.Add(kvp.Key);
                 }
             }
+
             return result.ToList();
         }
 
@@ -365,12 +370,13 @@ namespace Common
             if (!File.Exists(moduleYaml))
                 return new List<string>();
 
-            var configurations = new ConfigurationParser(new FileInfo(modulePath)).GetConfigurations();
             var result = new HashSet<string>();
 
-            foreach (var config in configurations)
+            var definition = ModuleYamlParserFactory.Get().ParseByFilePath(moduleYaml);
+
+            foreach (var kvp in definition.AllConfigurations)
             {
-                var buildData = new BuildYamlParser(new FileInfo(modulePath)).Get(config);
+                var buildData = kvp.Value.Builds;
                 foreach (var data in buildData)
                 {
                     if (data.Target.IsFakeTarget())
@@ -380,9 +386,10 @@ namespace Common
                     var currentConfigs =
                         solutionParser.GetSolutionConfigsByCsproj(projectPath);
                     if (currentConfigs.Contains(data.Configuration))
-                        result.Add(config);
+                        result.Add(kvp.Key);
                 }
             }
+
             return result.ToList();
         }
     }

@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using Commands;
 using Common;
+using Common.Extensions;
 using Common.YamlParsers;
+using Common.YamlParsers.V2.Factories;
 using NUnit.Framework;
 
 namespace Tests.CommandsTests
@@ -89,8 +91,8 @@ namespace Tests.CommandsTests
             AddBuildScript("kanso.sln", null);
             new ConvertSpec().Run(new[] {"convert-spec"});
 
-            var data = Yaml.BuildParser("module").Get();
-            Assert.That(data.Count == 1);
+            var data = ModuleYamlParserFactory.Get().ParseByModuleName("module").GetDefaultConfiguration().Builds;
+            Assert.That(data.Length == 1);
             Assert.That(data[0].Configuration == "Release");
             Assert.That(data[0].Target == "kanso.sln");
         }
