@@ -11,20 +11,26 @@ namespace Common.YamlParsers
         private readonly Dictionary<string, object> configurationsDescription = new Dictionary<string, object>();
         protected readonly string ModuleName;
 
-        public ConfigurationYamlParser(FileInfo moduleName)
+        public ConfigurationYamlParser(FileSystemInfo moduleName)
         {
-            var serializer = new Serializer();
-            var text = File.ReadAllText(Path.Combine(moduleName.FullName, Helper.YamlSpecFile))
-                .Replace("\t", "    ");
+            var specFilePath = Path.Combine(moduleName.FullName, Helper.YamlSpecFile);
+            var text = File.ReadAllText(specFilePath).Replace("\t", "    ");
             ModuleName = moduleName.Name;
 
-            TryParseYaml(serializer, text);
+            TryParseYaml(text);
         }
 
-        private void TryParseYaml(Serializer serializer, string text)
+        public ConfigurationYamlParser(string moduleName, string configFileContents)
+        {
+            ModuleName = moduleName;
+            TryParseYaml(configFileContents);
+        }
+
+        private void TryParseYaml(string text)
         {
             try
             {
+                var serializer = new Serializer();
                 var content = serializer.Deserialize(text);
                 var dict = (Dictionary<object, object>) content;
                 foreach (var key in dict.Keys)
@@ -139,12 +145,12 @@ namespace Common.YamlParsers
         }
     }
 
-    public class DepsContent
+    public class DepsData
     {
         public string[] Force { get; set; }
         public List<Dep> Deps { get; set; }
 
-        public DepsContent(string[] force, List<Dep> deps)
+        public DepsData(string[] force, List<Dep> deps)
         {
             Force = force;
             Deps = deps;
