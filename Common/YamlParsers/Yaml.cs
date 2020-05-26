@@ -67,8 +67,7 @@ namespace Common.YamlParsers
             var files = new List<string>();
             var moduleDirectory = Path.Combine(Helper.CurrentWorkspace, moduleName);
 
-            var projects = buildsInfo.Select(info => info.Target)
-                .Where(t => !t.IsFakeTarget()).Distinct();
+            var projects = buildsInfo.Where(info => info.IsSln()).Select(info => info.Target).Distinct();
 
             foreach (var project in projects)
             {
@@ -105,9 +104,8 @@ namespace Common.YamlParsers
             var buildsInfo = configs.SelectMany(config => BuildParser(moduleName).Get(config));
             var moduleDirectory = Path.Combine(Helper.CurrentWorkspace, moduleName);
             var solutions = buildsInfo
+                .Where(info => info.IsSln() && info.Target.EndsWith(".sln"))
                 .Select(info => info.Target)
-                .Where(target => !target.IsFakeTarget())
-                .Where(target => target.EndsWith(".sln"))
                 .Select(solutionRelativePath => Path.Combine(moduleDirectory, solutionRelativePath))
                 .Distinct()
                 .ToList();

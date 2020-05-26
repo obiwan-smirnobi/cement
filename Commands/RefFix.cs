@@ -66,7 +66,7 @@ namespace Commands
             var modules = Helper.GetModules();
 
             var configs = Yaml.ConfigurationParser(rootModuleName).GetConfigurations();
-            var buildsInfo = configs.SelectMany(config => Yaml.BuildParser(rootModuleName).Get(config));
+            var buildsInfo = configs.SelectMany(config => Yaml.BuildParser(rootModuleName).Get(config)).ToArray();
             var processedFiles = new HashSet<string>();
 
             foreach (var buildInfo in buildsInfo)
@@ -75,11 +75,12 @@ namespace Commands
 
         private void Fix(BuildData buildInfo, List<Module> modules, HashSet<string> processedFiles)
         {
-            if (buildInfo.Target.IsFakeTarget())
-                throw new TargetNotFoundException(rootModuleName);
+            if (!buildInfo.IsSln())
+                return;
 
             var vsParser = new VisualStudioProjectParser(buildInfo.Target, modules);
-            foreach (var file in vsParser.GetCsprojList(buildInfo))
+            var csprojs = vsParser.GetCsprojList(buildInfo).ToArray();
+            foreach (var file in csprojs)
             {
                 if (processedFiles.Contains(file))
                     continue;
@@ -160,8 +161,6 @@ namespace Commands
                 answer = null;
             return answer;
         }
-
-
 
         private void UpdateReference(string reference, string project)
         {

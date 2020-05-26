@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Common.Extensions;
 
 namespace Common
 {
@@ -23,6 +24,11 @@ namespace Common
             Tool = tool;
             Parameters = parameters;
             Name = name;
+        }
+
+        public bool IsSln()
+        {
+            return (Tool.Name == "msbuild" || Tool.Name == "dotnet") && !string.IsNullOrEmpty(Target) && Target != "None";
         }
     }
 

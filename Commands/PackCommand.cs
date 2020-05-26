@@ -1,9 +1,7 @@
-using System;
 using Common;
 using Common.YamlParsers;
 using System.IO;
 using System.Linq;
-using Common.Extensions;
 
 namespace Commands
 {
@@ -32,7 +30,7 @@ namespace Commands
             project = Yaml.GetProjectFileName(project, moduleName);
             configuration = configuration ?? "full-build";
 
-            var buildData = Yaml.BuildParser(moduleName).Get(configuration).FirstOrDefault(t => !t.Target.IsFakeTarget());
+            var buildData = Yaml.BuildParser(moduleName).Get(configuration).FirstOrDefault(t => t.IsSln());
 
             var projectPath = Path.GetFullPath(project);
             var csproj = new ProjectFile(projectPath);

@@ -20,10 +20,17 @@ namespace Common
 
         public VisualStudioProjectParser(string solutionPath, IEnumerable<string> modules)
         {
-            this.solutionPath = solutionPath;
-            cwd = Path.GetDirectoryName(solutionPath);
-            modulesList = modules.ToList();
-            solutionContent = File.ReadAllText(solutionPath).Split('\n');
+            try
+            {
+                this.solutionPath = solutionPath;
+                cwd = Path.GetDirectoryName(solutionPath);
+                modulesList = modules.ToList();
+                solutionContent = File.ReadAllText(solutionPath).Split('\n');
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to parse solution:[{solutionPath}].", ex);
+            }
         }
 
         public List<string> GetReferences(BuildData buildData)
@@ -78,7 +85,7 @@ namespace Common
 
             if (allReferences)
                 return GetAllReferencesFromCsproj(xml, csprojPath, configuration);
-            
+
             var refs = xml.GetElementsByTagName("HintPath");
 
             foreach (XmlNode reference in refs)

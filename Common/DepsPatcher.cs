@@ -349,7 +349,7 @@ namespace Common
                 var buildData = new BuildYamlParser(new FileInfo(modulePath)).Get(config);
                 foreach (var data in buildData)
                 {
-                    if (data.Target.IsFakeTarget())
+                    if (!data.IsSln())
                         continue;
                     var dataTargetPath = Path.Combine(modulePath, data.Target);
                     if (dataTargetPath == solutionFile)
@@ -374,7 +374,7 @@ namespace Common
                 var buildData = new BuildYamlParser(new FileInfo(modulePath)).Get(config);
                 foreach (var data in buildData)
                 {
-                    if (data.Target.IsFakeTarget())
+                    if (!data.IsSln())
                         continue;
                     var slnPath = Path.Combine(modulePath, data.Target);
                     var solutionParser = new VisualStudioProjectParser(slnPath, new List<string>());

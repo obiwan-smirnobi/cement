@@ -15,7 +15,7 @@ namespace Common
             var result = new List<BuildScriptWithBuildData>();
             foreach (var buildSection in buildSections)
             {
-                if (buildSection.Target.IsFakeTarget())
+                if (string.IsNullOrEmpty(buildSection.Target) || buildSection.Target == "None")
                     result.Add(null);
                 else
                 {
